@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Meridian — Inventory Availability & Allocation Pilot</title>
+  <style>
+    @page {
+      size: 13.333in 7.5in;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .slide {
+      width: 13.333in;
+      height: 7.5in;
+      page-break-after: always;
+      background: #ffffff;
+      position: relative;
+      padding: 0.65in 0.85in;
+      overflow: hidden;
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0.18in;
+      height: 100%;
+      background: #0f766e;
+    }
+
+    .kicker {
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0f766e;
+      font-weight: 700;
+      margin-bottom: 0.25in;
+    }
+
+    h1 {
+      font-size: 44px;
+      line-height: 1.05;
+      margin: 0 0 0.45in 0;
+      color: #111827;
+      max-width: 10.8in;
+    }
+
+    .body {
+      font-size: 28px;
+      line-height: 1.32;
+      max-width: 10.8in;
+      color: #1f2937;
+    }
+
+    .highlight {
+      color: #0f766e;
+      font-weight: 700;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 0.32in;
+      left: 0.85in;
+      right: 0.85in;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 0.12in;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #ccfbf1;
+      color: #0f766e;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 0.25in;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.22in;
+      margin-top: 0.45in;
+    }
+
+    .card {
+      border: 1px solid #d1d5db;
+      border-radius: 16px;
+      padding: 0.22in;
+      background: #f9fafb;
+      min-height: 1.25in;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0f766e;
+      margin-bottom: 0.08in;
+    }
+
+    .card-text {
+      font-size: 18px;
+      line-height: 1.3;
+      color: #374151;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.18in;
+      margin-top: 0.5in;
+    }
+
+    .step {
+      border-left: 5px solid #0f766e;
+      background: #f9fafb;
+      padding: 0.18in;
+      border-radius: 10px;
+      min-height: 1.35in;
+    }
+
+    .step-num {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f766e;
+      margin-bottom: 0.08in;
+    }
+
+    .step-text {
+      font-size: 18px;
+      line-height: 1.3;
+      color: #374151;
+    }
+
+    .notes {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      .slide {
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+
+    @media screen {
+      .slide {
+        margin: 24px auto;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.16);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Slide 1 -->
+  <section class="slide">
+    <div class="kicker">Meridian | UC1.1 Revised</div>
+    <span class="badge">Executive Deck</span>
+    <h1>The Omnichannel Availability Gap</h1>
+    <div class="body">
+      Meridian runs <span class="highlight">600 stores</span> and online across
+      <span class="highlight">8 countries</span> on fragmented inventory systems.
+      Customers see unreliable availability; competitors offer unified stock visibility
+      and faster fulfilment.
+    </div>
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>1 / 10</span>
+    </div>
+    <div class="notes">
+      Customers increasingly expect accurate availability across online and stores.
+      Meridian’s fragmented systems make that unreliable, especially for click-and-collect
+      and store fulfilment.
+    </div>
+  </section>
+
+  <!-- Slide 2 -->
+  <section class="slide">
+    <div class="kicker">Problem</div>
+    <h1>12% Pickup Cancellations, Root Cause Unproven</h1>
+    <div class="body">
+      Click-and-collect cancellations at pickup are
+      <span class="highlight">12%</span>. Drivers may include allocation,
+      POS latency, inventory accuracy, returns, shrinkage, or store execution;
+      pilot must isolate causes.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Known symptom</div>
+        <div class="card-text">Customers reserve or order items that are unavailable at pickup.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Unknown cause</div>
+        <div class="card-text">Forecasting may not be the only, or main, failure mode.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pilot role</div>
+        <div class="card-text">Prove which causes are material before scaling investment.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>2 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 3 -->
+  <section class="slide">
+    <div class="kicker">Opportunity</div>
+    <h1>Inventory Availability & Allocation Pilot</h1>
+    <div class="body">
+      Diagnose phantom stock causes, then test demand forecasts and allocation
+      recommendations. Planners approve actions. Goal:
+      <span class="highlight">prove cancellations can fall sustainably</span>
+      before rollout.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">1. Diagnose</div>
+        <div class="card-text">Identify where availability breaks across systems and store operations.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2. Recommend</div>
+        <div class="card-text">Use demand and inventory signals to suggest allocation actions.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3. Validate</div>
+        <div class="card-text">Measure cancellation reduction and planner adoption before rollout.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>3 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 4 -->
+  <section class="slide">
+    <div class="kicker">Solution Architecture</div>
+    <h1>How It Works</h1>
+    <div class="body">
+      Daily: reconcile SAP, OMS, POS, store counts, and returns.
+      Flag latency or accuracy gaps. Forecast demand, recommend reallocations,
+      capture planner decisions, measure cancellation impact.
+    </div>
+
+    <div class="timeline">
+      <div class="step">
+        <div class="step-num">Daily Data</div>
+        <div class="step-text">SAP, OMS, POS, store counts, returns.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Diagnostics</div>
+        <div class="step-text">Detect latency, mismatch, and accuracy gaps.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Recommendations</div>
+        <div class="step-text">Forecast demand and suggest reallocations.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Measurement</div>
+        <div class="step-text">Track adoption and cancellation impact.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>4 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 5 -->
+  <section class="slide">
+    <div class="kicker">Value Proposition</div>
+    <h1>Pilot-Validated Upside: €0.8–2.3M</h1>
+    <div class="body">
+      Value range requires Finance sign-off using Meridian orders, margins,
+      cancellations, churn, and recoverable-rate evidence.
+      <span class="highlight">Churn benefit remains upside</span>
+      until transaction data proves it.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Hard evidence</div>
+        <div class="card-text">Orders, cancellation volume, average margin, recoverable rate.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Conditional upside</div>
+        <div class="card-text">Churn reduction included only when transaction data supports it.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Finance gate</div>
+        <div class="card-text">Rollout economics require Finance validation after pilot.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>5 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 6 -->
+  <section class="slide">
+    <div class="kicker">ROI Scenarios</div>
+    <h1>Stage-Gated Economics</h1>
+    <div class="body">
+      Fund pilot first:
+      <span class="highlight">€250–350K for 12 weeks</span>.
+      Full rollout estimate, integration complexity, run cost, and payback
+      are recalculated after evidence gates.
+    </div>
+
+    <div class="timeline">
+      <div class="step">
+        <div class="step-num">Gate 1</div>
+        <div class="step-text">Baseline cancellations and root causes.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Gate 2</div>
+        <div class="step-text">Validate data latency and inventory accuracy.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Gate 3</div>
+        <div class="step-text">Prove planner adoption and measurable impact.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Rollout Decision</div>
+        <div class="step-text">Re-estimate cost, timing, run cost, payback.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>6 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 7 -->
+  <section class="slide">
+    <div class="kicker">Sensitivity Analysis</div>
+    <h1>Sensitivities That Can Kill Value</h1>
+    <div class="body">
+      Top drivers: true allocation-driven cancellation share, inventory accuracy,
+      SAP/OMS/POS latency, and planner adoption. If these fail,
+      <span class="highlight">model accuracy will not deliver margin</span>.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Allocation-driven share</div>
+        <div class="card-text">If low, allocation optimization has limited commercial leverage.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Data reliability</div>
+        <div class="card-text">Latency and inaccurate stock records can swamp forecast gains.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Planner adoption</div>
+        <div class="card-text">Recommendations must be trusted and acted on consistently.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>7 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 8 -->
+  <section class="slide">
+    <div class="kicker">Risks & Gates</div>
+    <h1>Evidence Gates Before Rollout</h1>
+    <div class="body">
+      Proceed only if: root cause share is material, cancellations drop measurably,
+      <span class="highlight">≥70% planner adoption</span>, data latency acceptable,
+      and Finance validates the business case.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Cause</div>
+        <div class="card-text">A material share of cancellations must be addressable by this solution.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Impact</div>
+        <div class="card-text">Cancellation reduction must be measurable, not anecdotal.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Adoption</div>
+        <div class="card-text">At least 70% planner adoption within pilot window.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>8 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 9 -->
+  <section class="slide">
+    <div class="kicker">The Ask</div>
+    <h1>Pilot Investment & Sponsorship</h1>
+    <div class="body">
+      Approve <span class="highlight">€250–350K pilot budget</span>,
+      two sponsor countries, SAP/OMS access, planner participation,
+      and Finance support. No 8-country rollout approval requested today.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Budget</div>
+        <div class="card-text">€250–350K for 12-week pilot.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Access</div>
+        <div class="card-text">SAP, OMS, POS, planner workflows, store data.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Decision</div>
+        <div class="card-text">Rollout considered only after evidence gates.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>9 / 10</span>
+    </div>
+  </section>
+
+  <!-- Slide 10 -->
+  <section class="slide">
+    <div class="kicker">Next Steps</div>
+    <h1>30-Day Validation Plan</h1>
+    <div class="body">
+      Week 1: baseline cancellations. Week 2: map data flows.
+      Week 3: isolate causes. Week 4: prototype forecast and allocation
+      recommendations with planners.
+    </div>
+
+    <div class="timeline">
+      <div class="step">
+        <div class="step-num">Week 1</div>
+        <div class="step-text">Baseline cancellations and margin exposure.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Week 2</div>
+        <div class="step-text">Map SAP, OMS, POS, store-count data flows.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Week 3</div>
+        <div class="step-text">Isolate root causes and addressable share.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">Week 4</div>
+        <div class="step-text">Prototype recommendations with planners.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Inventory Availability & Allocation Pilot</span>
+      <span>10 / 10</span>
+    </div>
+  </section>
+
+</body>
+</html>
