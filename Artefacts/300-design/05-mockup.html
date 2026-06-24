@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05-mockup — Availability Confidence (lo-fi)</title>
+<style>
+  /* ── reset ─────────────────────────────────────────────── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Courier New", monospace;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 16px;
+    font-size: 13px;
+  }
+
+  /* ── layout ─────────────────────────────────────────────── */
+  .wrapper { max-width: 860px; margin: 0 auto; }
+
+  h1 { font-size: 13px; color: #888; margin-bottom: 4px; }
+  .subtitle { font-size: 11px; color: #555; margin-bottom: 20px; }
+
+  /* ── scenario picker ────────────────────────────────────── */
+  .scenario-bar {
+    display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .scenario-btn {
+    padding: 6px 14px;
+    border: 1px solid #444;
+    background: #222;
+    color: #aaa;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    border-radius: 2px;
+  }
+  .scenario-btn.active { border-color: #fff; color: #fff; background: #333; }
+
+  /* ── phone frame + screens ──────────────────────────────── */
+  .stage {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .phone {
+    width: 320px;
+    min-height: 560px;
+    background: #111;
+    border: 2px solid #444;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.active { display: flex; }
+
+  /* top bar */
+  .topbar {
+    background: #0a0a0a;
+    padding: 10px 12px 8px;
+    font-size: 11px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #222;
+  }
+  .topbar .back { color: #0af; cursor: pointer; }
+  .topbar .title { color: #ccc; font-weight: bold; }
+
+  /* content */
+  .content { padding: 12px; flex: 1; overflow-y: auto; }
+
+  /* product block */
+  .product-img {
+    background: #222;
+    height: 120px;
+    border: 1px dashed #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    font-size: 11px;
+    margin-bottom: 10px;
+    border-radius: 2px;
+  }
+  .product-name { font-size: 14px; font-weight: bold; color: #eee; margin-bottom: 2px; }
+  .product-price { font-size: 13px; color: #aaa; margin-bottom: 12px; }
+
+  /* availability card */
+  .avail-card {
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #151515;
+  }
+  .avail-card .store-name { font-weight: bold; color: #ddd; margin-bottom: 4px; }
+  .avail-card .store-meta { font-size: 11px; color: #666; margin-bottom: 8px; }
+
+  /* confidence badge */
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .badge-high   { background: #1a3a1a; color: #4caf50; border: 1px solid #4caf50; }
+  .badge-medium { background: #2a2a0a; color: #ffc107; border: 1px solid #ffc107; }
+  .badge-low    { background: #2a0a0a; color: #f44336; border: 1px solid #f44336; }
+  .badge-fallback { background: #1a1a1a; color: #888; border: 1px solid #555; }
+
+  .staleness { font-size: 10px; color: #555; margin-top: 3px; }
+
+  /* modal overlay */
+  .modal-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    z-index: 10;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-box {
+    background: #1a1a1a;
+    border: 1px solid #f44336;
+    border-radius: 4px;
+    padding: 14px;
+    width: 100%;
+  }
+  .modal-title { font-weight: bold; color: #f44336; margin-bottom: 8px; font-size: 12px; }
+  .modal-body  { color: #ccc; font-size: 11px; margin-bottom: 12px; line-height: 1.5; }
+  .modal-note  { font-size: 10px; color: #555; margin-bottom: 12px; }
+
+  /* buttons */
+  .btn {
+    display: block; width: 100%;
+    padding: 9px 12px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: inherit;
+    font-size: 12px;
+    margin-bottom: 6px;
+    border: 1px solid #444;
+    background: #222;
+    color: #eee;
+  }
+  .btn-primary  { background: #0a3a0a; border-color: #4caf50; color: #4caf50; }
+  .btn-warning  { background: #2a0a0a; border-color: #f44336; color: #f44336; }
+  .btn-ghost    { background: transparent; border-color: #444; color: #888; font-size: 11px; }
+  .btn-fallback { background: #1a1a1a; border-color: #555; color: #888; }
+
+  /* confirmation */
+  .confirm-block {
+    border: 1px solid #333; border-radius: 4px; padding: 10px;
+    margin-bottom: 10px; background: #0a1a0a;
+  }
+  .confirm-label { font-size: 11px; color: #555; margin-bottom: 2px; }
+  .confirm-value { font-size: 13px; color: #ccc; margin-bottom: 8px; }
+  .confirm-badge { margin-bottom: 4px; }
+
+  /* warn block */
+  .warn-block {
+    border: 1px solid #555; border-radius: 4px; padding: 10px;
+    margin-bottom: 10px; background: #111;
+  }
+  .warn-title  { font-size: 11px; color: #ffc107; font-weight: bold; margin-bottom: 4px; }
+  .warn-body   { font-size: 11px; color: #888; line-height: 1.5; }
+
+  /* nav bar */
+  .navbar {
+    background: #0a0a0a;
+    border-top: 1px solid #222;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .nav-step { font-size: 10px; color: #444; }
+  .nav-btn {
+    padding: 5px 12px;
+    background: #222;
+    border: 1px solid #444;
+    color: #aaa;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    border-radius: 2px;
+  }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* ── annotation panel ───────────────────────────────────── */
+  .annotations {
+    flex: 1;
+    min-width: 240px;
+  }
+  .ann-title { font-size: 11px; color: #555; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .ann-item {
+    border-left: 2px solid #333;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .ann-item strong { color: #ccc; display: block; margin-bottom: 2px; }
+  .ann-item.active-ann { border-left-color: #0af; }
+
+  /* screen label */
+  .screen-label {
+    font-size: 10px;
+    color: #555;
+    text-align: center;
+    padding: 4px;
+    background: #0a0a0a;
+    letter-spacing: 1px;
+  }
+  .scenario-tag {
+    font-size: 10px;
+    color: #444;
+    text-align: right;
+    padding: 3px 8px;
+    background: #0a0a0a;
+    border-bottom: 1px solid #1a1a1a;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <h1>05-mockup.html — Availability Confidence Feature (lo-fi)</h1>
+  <p class="subtitle">3-screen clickable flow · shows happy path + low-confidence modal + fallback state · rough by design</p>
+
+  <!-- scenario picker -->
+  <div class="scenario-bar">
+    <button class="scenario-btn active" onclick="setScenario('high')">A — High confidence</button>
+    <button class="scenario-btn" onclick="setScenario('low')">B — Low confidence (modal)</button>
+    <button class="scenario-btn" onclick="setScenario('fallback')">C — Fallback (data unavailable)</button>
+  </div>
+
+  <div class="stage">
+
+    <!-- ══ PHONE FRAME ════════════════════════════════════════ -->
+    <div class="phone" id="phone">
+
+      <!-- ────────────────────────────────────────────────────
+           SCENARIO A — HIGH CONFIDENCE
+           ──────────────────────────────────────────────────── -->
+
+      <!-- A / Screen 1 — Product page, High -->
+      <div class="screen active" id="A-s1">
+        <div class="scenario-tag">Scenario A — High confidence</div>
+        <div class="screen-label">SCREEN 1 OF 3 · PRODUCT PAGE</div>
+        <div class="topbar"><span class="back">← Back</span><span class="title">Meridian</span></div>
+        <div class="content">
+          <div class="product-img">[ product image placeholder ]</div>
+          <div class="product-name">Linen Blazer — Sage, M</div>
+          <div class="product-price">€129.00</div>
+
+          <div class="avail-card">
+            <div class="store-name">Oxford Street</div>
+            <div class="store-meta">0.4 km · Click &amp; Collect</div>
+            <span class="badge badge-high">Likely available</span>
+            <div class="staleness">Updated 6 min ago</div>
+          </div>
+
+          <div class="avail-card">
+            <div class="store-name">Westfield</div>
+            <div class="store-meta">2.1 km · Click &amp; Collect</div>
+            <span class="badge badge-medium">May vary — check before travelling</span>
+            <div class="staleness">Updated 18 min ago</div>
+          </div>
+
+          <button class="btn btn-primary" onclick="go('A-s2')">Reserve at Oxford Street →</button>
+        </div>
+        <div class="navbar">
+          <span class="nav-step">1 / 3</span>
+          <button class="nav-btn" onclick="go('A-s2')">Next →</button>
+        </div>
+      </div>
+
+      <!-- A / Screen 2 — Confirm reservation (no modal, High) -->
+      <div class="screen" id="A-s2">
+        <div class="scenario-tag">Scenario A — High confidence</div>
+        <div class="screen-label">SCREEN 2 OF 3 · RESERVATION CONFIRM</div>
+        <div class="topbar"><span class="back" onclick="go('A-s1')">← Back</span><span class="title">Confirm Reservation</span></div>
+        <div class="content">
+          <div class="confirm-block">
+            <div class="confirm-label">Item</div>
+            <div class="confirm-value">Linen Blazer — Sage, M</div>
+            <div class="confirm-label">Store</div>
+            <div class="confirm-value">Oxford Street</div>
+            <div class="confirm-label">Availability at reservation</div>
+            <div class="confirm-badge"><span class="badge badge-high">Likely available</span></div>
+            <div class="staleness">Signal age at reservation: 6 min</div>
+          </div>
+          <div class="warn-block">
+            <div class="warn-title">Not a hold</div>
+            <div class="warn-body">This reservation does not guarantee the item is set aside. The availability signal is an estimate, not a committed hold.</div>
+          </div>
+          <button class="btn btn-primary" onclick="go('A-s3')">Confirm reservation →</button>
+          <button class="btn btn-ghost" onclick="go('A-s1')">← Choose a different store</button>
+        </div>
+        <div class="navbar">
+          <button class="nav-btn" onclick="go('A-s1')">← Back</button>
+          <span class="nav-step">2 / 3</span>
+          <button class="nav-btn" onclick="go('A-s3')">Next →</button>
+        </div>
+      </div>
+
+      <!-- A / Screen 3 — Pickup confirmation -->
+      <div class="screen" id="A-s3">
+        <div class="scenario-tag">Scenario A — High confidence</div>
+        <div class="screen-label">SCREEN 3 OF 3 · CONFIRMATION</div>
+        <div class="topbar"><span class="title">Reservation Confirmed</span></div>
+        <div class="content">
+          <div class="confirm-block">
+            <div class="confirm-value" style="color:#4caf50; font-size:16px; margin-bottom:8px;">✓ Reserved</div>
+            <div class="confirm-label">Item</div>
+            <div class="confirm-value">Linen Blazer — Sage, M</div>
+            <div class="confirm-label">Store</div>
+            <div class="confirm-value">Oxford Street — 0.4 km</div>
+            <div class="confirm-label">Signal shown at reservation</div>
+            <div class="confirm-badge"><span class="badge badge-high">Likely available</span></div>
+          </div>
+          <div class="warn-block">
+            <div class="warn-body">If the item isn't on the shelf when you arrive, we'll log the signal mismatch and contact you within 2 hours.</div>
+          </div>
+        </div>
+        <div class="navbar">
+          <button class="nav-btn" onclick="go('A-s2')">← Back</button>
+          <span class="nav-step">3 / 3</span>
+          <button class="nav-btn" disabled>Done</button>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────
+           SCENARIO B — LOW CONFIDENCE + MODAL
+           ──────────────────────────────────────────────────── -->
+
+      <!-- B / Screen 1 — Product page, Low -->
+      <div class="screen" id="B-s1">
+        <div class="scenario-tag">Scenario B — Low confidence</div>
+        <div class="screen-label">SCREEN 1 OF 3 · PRODUCT PAGE</div>
+        <div class="topbar"><span class="back">← Back</span><span class="title">Meridian</span></div>
+        <div class="content">
+          <div class="product-img">[ product image placeholder ]</div>
+          <div class="product-name">Linen Blazer — Sage, M</div>
+          <div class="product-price">€129.00</div>
+
+          <div class="avail-card">
+            <div class="store-name">Oxford Street</div>
+            <div class="store-meta">0.4 km · Click &amp; Collect</div>
+            <span class="badge badge-low">May not be available</span>
+            <div class="staleness">Updated 11 min ago</div>
+          </div>
+
+          <div class="avail-card">
+            <div class="store-name">Westfield</div>
+            <div class="store-meta">2.1 km · Click &amp; Collect</div>
+            <span class="badge badge-high">Likely available</span>
+            <div class="staleness">Updated 4 min ago</div>
+          </div>
+
+          <button class="btn btn-warning" onclick="showModal('B-modal')">Reserve at Oxford Street →</button>
+          <button class="btn btn-primary" onclick="go('B-s2alt')">Reserve at Westfield (better option) →</button>
+        </div>
+        <div class="navbar">
+          <span class="nav-step">1 / 3</span>
+          <button class="nav-btn" onclick="showModal('B-modal')">Next →</button>
+        </div>
+
+        <!-- friction modal -->
+        <div class="modal-overlay hidden" id="B-modal" role="dialog" aria-modal="true">
+          <div class="modal-box">
+            <div class="modal-title">⚠ May not be available</div>
+            <div class="modal-body">Our system suggests this item may not be on the shelf at <strong>Oxford Street</strong> when you arrive.<br><br>Signal age: 11 min ago.</div>
+            <div class="modal-note">This is an estimate — not a committed hold.</div>
+            <button class="btn btn-primary" onclick="hideModal('B-modal'); go('B-s2alt')" autofocus>← Choose another store (Westfield)</button>
+            <button class="btn btn-ghost" onclick="hideModal('B-modal'); go('B-s2low')">Reserve anyway at Oxford Street</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B / Screen 2 — Confirm at Low-confidence store -->
+      <div class="screen" id="B-s2low">
+        <div class="scenario-tag">Scenario B — Reserve anyway (Low)</div>
+        <div class="screen-label">SCREEN 2 OF 3 · RESERVATION CONFIRM</div>
+        <div class="topbar"><span class="back" onclick="go('B-s1')">← Back</span><span class="title">Confirm Reservation</span></div>
+        <div class="content">
+          <div class="confirm-block">
+            <div class="confirm-label">Item</div>
+            <div class="confirm-value">Linen Blazer — Sage, M</div>
+            <div class="confirm-label">Store</div>
+            <div class="confirm-value">Oxford Street</div>
+            <div class="confirm-label">You acknowledged at reservation</div>
+            <div class="confirm-badge"><span class="badge badge-low">May not be available</span></div>
+            <div class="staleness">Signal age at reservation: 11 min</div>
+          </div>
+          <div class="warn-block">
+            <div class="warn-title">You chose to proceed</div>
+            <div class="warn-body">The warning was shown and acknowledged. If the item isn't there, the log will show the signal was Low at reservation time.</div>
+          </div>
+          <button class="btn btn-warning" onclick="go('B-s3')">Confirm reservation →</button>
+          <button class="btn btn-ghost" onclick="go('B-s1')">← Go back and choose Westfield</button>
+        </div>
+        <div class="navbar">
+          <button class="nav-btn" onclick="go('B-s1')">← Back</button>
+          <span class="nav-step">2 / 3</span>
+          <button class="nav-btn" onclick="go('B-s3')">Next →</button>
+        </div>
+      </div>
+
+      <!-- B / Screen 2b — Confirm at better store (Westfield, High) -->
+      <div class="screen" id="B-s2alt">
+        <div class="scenario-tag">Scenario B — Redirected to better store</div>
+        <div class="screen-label">SCREEN 2 OF 3 · RESERVATION CONFIRM</div>
+        <div class="topbar"><span class="back" onclick="go('B-s1')">← Back</span><span class="title">Confirm Reservation</span></div>
+        <div class="content">
+          <div class="confirm-block">
+            <div class="confirm-label">Item</div>
+            <div class="confirm-value">Linen Blazer — Sage, M</div>
+            <div class="confirm-label">Store</div>
+            <div class="confirm-value">Westfield — 2.1 km</div>
+            <div class="confirm-label">Availability at reservation</div>
+            <div class="confirm-badge"><span class="badge badge-high">Likely available</span></div>
+            <div class="staleness">Signal age at reservation: 4 min</div>
+          </div>
+          <button class="btn btn-primary" onclick="go('B-s3')">Confirm reservation →</button>
+          <button class="btn btn-ghost" onclick="go('B-s1')">← Back</button>
+        </div>
+        <div class="navbar">
+          <button class="nav-btn" onclick="go('B-s1')">← Back</button>
+          <span class="nav-step">2 / 3</span>
+          <button class="nav-btn" onclick="go('B-s3')">Next →</button>
+        </div>
+      </div>
+
+      <!-- B / Screen 3 — Confirmation -->
+      <div class="screen" id="B-s3">
+        <div class="scenario-tag">Scenario B — Confirmation</div>
+        <div class="screen-label">SCREEN 3 OF 3 · CONFIRMATION</div>
+        <div class="topbar"><span class="title">Reservation Confirmed</span></div>
+        <div class="content">
+          <div class="confirm-block">
+            <div class="confirm-value" style="color:#4caf50; font-size:16px; margin-bottom:8px;">✓ Reserved</div>
+            <div class="confirm-label">Confidence logged at reservation</div>
+            <div class="confirm-badge"><span class="badge badge-low" id="B-s3-badge">May not be available</span></div>
+            <div class="staleness">Signal mismatch will be logged if item is absent at pickup.</div>
+          </div>
+        </div>
+        <div class="navbar">
+          <button class="nav-btn" onclick="go('B-s2low')">← Back</button>
+          <span class="nav-step">3 / 3</span>
+          <button class="nav-btn" disabled>Done</button>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────
+           SCENARIO C — FALLBACK (data unavailable)
+           ──────────────────────────────────────────────────── -->
+
+      <!-- C / Screen 1 — Product page, Fallback -->
+      <div class="screen" id="C-s1">
+        <div class="scenario-tag">Scenario C — Fallback (SAP stale &gt;4h)</div>
+        <div class="screen-label">SCREEN 1 OF 3 · PRODUCT PAGE</div>
+        <div class="topbar"><span class="back">← Back</span><span class="title">Meridian</span></div>
+        <div class="content">
+          <div class="product-img">[ product image placeholder ]</div>
+          <div class="product-name">Linen Blazer — Sage, M</div>
+          <div class="product-price">€129.00</div>
+
+          <div class="avail-card">
+            <div class="store-name">Oxford Street</div>
+            <div class="store-meta">0.4 km · Click &amp; Collect</div>
+            <span class="badge badge-fallback">Availability unknown</span>
+            <div class="staleness" style="color:#f44336;">Stock data may be outdated — check in store before travelling</div>
+          </div>
+
+          <div class="avail-card">
+            <div class="store-name">Westfield</div>
+            <div class="store-meta">2.1 km · Click &amp; Collect</div>
+            <span class="badge badge-fallback">In stock (last known)</span>
+            <div class="staleness" style="color:#888;">Last updated: 4h 22m ago — may not reflect current shelf state</div>
+          </div>
+
+          <div class="warn-block" style="margin-bottom:10px;">
+            <div class="warn-title">Live estimates unavailable</div>
+            <div class="warn-body">The availability confidence service is temporarily unavailable. Showing last known stock status only.</div>
+          </div>
+
+          <button class="btn btn-fallback" onclick="go('C-s2')">Reserve at Oxford Street (no guarantee) →</button>
+        </div>
+        <div class="navbar">
+          <span class="nav-step">1 / 3</span>
+          <button class="nav-btn" onclick="go('C-s2')">Next →</button>
+        </div>
+      </div>
+
+      <!-- C / Screen 2 — Confirm with fallback warning -->
+      <div class="screen" id="C-s2">
+        <div class="scenario-tag">Scenario C — Fallback confirm</div>
+        <div class="screen-label">SCREEN 2 OF 3 · RESERVATION CONFIRM</div>
+        <div class="topbar"><span class="back" onclick="go('C-s1')">← Back</span><span class="title">Confirm Reservation</span></div>
+        <div class="content">
+          <div class="confirm-block">
+            <div class="confirm-label">Item</div>
+            <div class="confirm-value">Linen Blazer — Sage, M</div>
+            <div class="confirm-label">Store</div>
+            <div class="confirm-value">Oxford Street</div>
+            <div class="confirm-label">AI-AC2 — Refusal / Fallback active</div>
+            <div class="confirm-badge"><span class="badge badge-fallback">Availability unknown</span></div>
+          </div>
+          <div class="warn-block">
+            <div class="warn-title">⚠ No confidence estimate available</div>
+            <div class="warn-body">SAP data is more than 4 hours old. We cannot estimate whether this item is on the shelf right now. You can still reserve, but we strongly recommend calling the store first.<br><br>Circuit breaker: confidence label suppressed per AI-AC2.</div>
+          </div>
+          <button class="btn btn-fallback" onclick="go('C-s3')">Reserve (no estimate available) →</button>
+          <button class="btn btn-ghost" onclick="go('C-s1')">← Back</button>
+        </div>
+        <div class="navbar">
+          <button class="nav-btn" onclick="go('C-s1')">← Back</button>
+          <span class="nav-step">2 / 3</span>
+          <button class="nav-btn" onclick="go('C-s3')">Next →</button>
+        </div>
+      </div>
+
+      <!-- C / Screen 3 — Confirmation, fallback -->
+      <div class="screen" id="C-s3">
+        <div class="scenario-tag">Scenario C — Fallback confirmation</div>
+        <div class="screen-label">SCREEN 3 OF 3 · CONFIRMATION</div>
+        <div class="topbar"><span class="title">Reservation Confirmed</span></div>
+        <div class="content">
+          <div class="confirm-block">
+            <div class="confirm-value" style="color:#888; font-size:16px; margin-bottom:8px;">✓ Reserved (no confidence data)</div>
+            <div class="confirm-label">Signal at reservation time</div>
+            <div class="confirm-badge"><span class="badge badge-fallback">Availability unknown — fallback mode</span></div>
+            <div class="staleness">Confidence logging: will record "no signal" against this reservation for calibration.</div>
+          </div>
+          <div class="warn-block">
+            <div class="warn-title">Call ahead recommended</div>
+            <div class="warn-body">Oxford Street: +44 20 7123 4567<br><br>We'll notify you when live availability estimates are restored.</div>
+          </div>
+        </div>
+        <div class="navbar">
+          <button class="nav-btn" onclick="go('C-s2')">← Back</button>
+          <span class="nav-step">3 / 3</span>
+          <button class="nav-btn" disabled>Done</button>
+        </div>
+      </div>
+
+    </div><!-- /phone -->
+
+    <!-- ══ ANNOTATIONS ════════════════════════════════════════ -->
+    <div class="annotations" id="annotations">
+      <div class="ann-title">AC coverage notes</div>
+      <!-- populated by JS -->
+    </div>
+
+  </div><!-- /stage -->
+
+</div><!-- /wrapper -->
+
+<script>
+// current scenario
+let scenario = 'high';
+const scenarios = {
+  high: { start: 'A-s1' },
+  low:  { start: 'B-s1' },
+  fallback: { start: 'C-s1' }
+};
+
+const annotations = {
+  'A-s1': [
+    { label: 'AC1 — confidence label present', note: 'High = "Likely available"; Medium = "May vary"', active: true },
+    { label: 'AI-AC4 — disclosure', note: '"Updated N min ago" shown on each card', active: true },
+    { label: 'AI-AC4 — non-guarantee copy', note: '"Likely available" — not "Confirmed in stock"', active: true },
+  ],
+  'A-s2': [
+    { label: 'AI-AC4 — disclosure on confirm screen', note: 'Signal age carried to reservation confirm', active: true },
+    { label: 'AI-AC6 — negative AC', note: '"Not a hold" notice — no language implying committed hold', active: true },
+  ],
+  'A-s3': [
+    { label: 'AI-AC5 — feedback logging', note: 'Confidence logged at reservation; mismatch tracking noted', active: true },
+  ],
+  'B-s1': [
+    { label: 'AI-AC1 — confidence label', note: 'Low = "May not be available" — plain language, not technical class', active: true },
+    { label: 'H5 — error prevention', note: 'Reserve button still present but triggers modal', active: true },
+    { label: 'B-i1 — inline alternative', note: 'Westfield (High) shown as peer option in same section', active: true },
+  ],
+  'B-s2low': [
+    { label: 'AI-AC2 — user opted in knowingly', note: 'Modal was shown; Low signal logged at reservation', active: true },
+    { label: 'AI-AC5 — mismatch logging', note: 'Low reservation logged; enables circuit-breaker calibration', active: true },
+  ],
+  'B-s2alt': [
+    { label: 'H3 — user control', note: 'Shopper redirected to High-confidence store via modal default action', active: true },
+  ],
+  'B-s3': [
+    { label: 'AI-AC5 — confidence logged', note: 'Label class at reservation time captured in event log', active: true },
+  ],
+  'C-s1': [
+    { label: 'AI-AC2 — refusal / fallback', note: 'SAP >4h stale → confidence label suppressed; "Availability unknown" shown', active: true },
+    { label: 'AI-AC4 — stale notice', note: '"Stock data may be outdated" visible on each card', active: true },
+    { label: 'AI-AC6 — no false positive', note: 'No "High" or "Likely available" emitted while SAP is stale', active: true },
+  ],
+  'C-s2': [
+    { label: 'AI-AC2 — fallback active', note: 'Circuit breaker note shown to user; no estimate claimed', active: true },
+    { label: 'AI-AC6 — never a clean positive', note: '"Availability unknown" — not "In stock" — while SAP stale', active: true },
+  ],
+  'C-s3': [
+    { label: 'AI-AC5 — null signal logged', note: '"No signal" recorded against reservation; counts in calibration denominator', active: true },
+  ],
+};
+
+function go(screenId) {
+  // hide all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // show target
+  const target = document.getElementById(screenId);
+  if (target) target.classList.add('active');
+  // update annotations
+  renderAnnotations(screenId);
+}
+
+function showModal(modalId) {
+  document.getElementById(modalId).classList.remove('hidden');
+}
+function hideModal(modalId) {
+  document.getElementById(modalId).classList.add('hidden');
+}
+
+function setScenario(s) {
+  scenario = s;
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  go(scenarios[s].start);
+}
+
+function renderAnnotations(screenId) {
+  const panel = document.getElementById('annotations');
+  const items = annotations[screenId] || [];
+  if (!items.length) {
+    panel.innerHTML = '<div class="ann-title">AC coverage notes</div><div class="ann-item"><strong>—</strong>No annotations for this screen.</div>';
+    return;
+  }
+  let html = '<div class="ann-title">AC coverage notes — ' + screenId + '</div>';
+  items.forEach(i => {
+    html += `<div class="ann-item ${i.active ? 'active-ann' : ''}"><strong>${i.label}</strong>${i.note}</div>`;
+  });
+  panel.innerHTML = html;
+}
+
+// init
+renderAnnotations('A-s1');
+</script>
+</body>
+</html>
