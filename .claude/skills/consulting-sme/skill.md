@@ -1,4 +1,3 @@
----
 name: consulting-sme-meridian
 description: Turn a raw playground, desk research, and customer verbatims for
   Meridian omnichannel retail into a validated opportunity brief — a value ×

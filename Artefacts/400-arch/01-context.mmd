@@ -1,0 +1,46 @@
+C4Context
+  title System Context — Meridian Omnichannel Platform (Phase 1)
+
+  %% ── Personas ──────────────────────────────────────────────────────────────
+  Person(customer, "Customer", "Browses catalogue, reserves click-and-collect via web or mobile app")
+  Person(associate, "Store Associate", "Confirms pickup, looks up reservations via in-store terminal")
+  Person(mktOps,   "Marketing Ops",   "Manages campaigns and customer segments via admin portal")
+
+  %% ── Focal system ──────────────────────────────────────────────────────────
+  System(meridian, "Meridian Omnichannel Platform",
+    "Unified headless commerce platform — catalogue, cart, checkout, AI inventory confidence signal. Strangler-fig migration of 22 regional stacks.")
+
+  %% ── External systems ──────────────────────────────────────────────────────
+  System_Ext(stripe,  "Stripe",
+    "Payment processing — PCI-DSS CDE, 3DS 2.0 SCA, local payment methods (Postepay, Satispay, Giropay, Sofort)")
+  System_Ext(sap,     "SAP S/4HANA",
+    "Inventory source of truth — batch sync every 2–4 h; no real-time event API")
+  System_Ext(auth0,   "Auth0",
+    "Identity provider — OAuth 2.0 / OIDC token issuance; kept external in Phase 1")
+  System_Ext(sendgrid,"SendGrid",
+    "Transactional email — reservation confirmations, cancellation alerts")
+  System_Ext(crms,    "Regional CRMs (DE / IT / FR)",
+    "Loyalty and customer data — 3 separate systems; push loyalty events to Meridian")
+  System_Ext(pos,     "Regional POS Systems",
+    "600 stores, mixed vendors — daily sales velocity synced to OMS")
+  System_Ext(cmp,     "OneTrust (Consent Management)",
+    "GDPR / CCPA consent store — Meridian checks opt-in status before any personalisation")
+  System_Ext(dhl,     "DHL / Regional Logistics",
+    "Last-mile delivery for DE / AT / FR / IT — pushes shipment tracking events to Meridian")
+
+  %% ── Outbound relationships ────────────────────────────────────────────────
+  Rel(customer,  meridian,  "browses catalogue, reserves click-and-collect",   "HTTPS")
+  Rel(associate, meridian,  "confirms pickup, queries reservation status",      "HTTPS")
+  Rel(mktOps,    meridian,  "manages campaigns, exports customer segments",     "HTTPS")
+
+  Rel(meridian,  stripe,    "initiates payment intent, triggers 3DS SCA",       "REST / HTTPS")
+  Rel(meridian,  sap,       "imports inventory snapshots every 15–30 min",      "RFC / BAPI batch")
+  Rel(meridian,  auth0,     "authenticates users, validates JWT tokens",         "OAuth 2.0 / OIDC")
+  Rel(meridian,  sendgrid,  "sends order confirmation and alert emails",         "REST / HTTPS")
+  Rel(meridian,  cmp,       "checks customer consent status before personalisation", "REST / HTTPS")
+
+  %% ── Inbound webhooks (AI common failure: these are forgotten) ─────────────
+  Rel(stripe,    meridian,  "sends async payment confirmation webhook",          "HTTPS POST")
+  Rel(dhl,       meridian,  "sends shipment tracking status updates",            "HTTPS POST webhook")
+  Rel(crms,      meridian,  "pushes loyalty event updates (earn / redeem)",      "HTTPS POST webhook")
+  Rel(pos,       meridian,  "syncs daily store sales velocity",                  "SFTP / batch")

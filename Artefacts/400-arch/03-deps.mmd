@@ -1,0 +1,56 @@
+graph TD
+  %% ── Nodes ─────────────────────────────────────────────────────────────────
+  POS["POS Client\n(in-store terminal)"]
+
+  GW["Apollo GraphQL Gateway\n(Node.js / Apollo Server)"]
+
+  ID["Identity Service\n(Node.js)"]
+  CART["Cart Service\n(Node.js)"]
+  CACHE[("Inventory Read Cache\n(Redis / AWS ElastiCache)")]
+
+  PROFDB[("Customer Profile DB\n(PostgreSQL / AWS RDS)")]
+  ORDERDB[("Order Database\n(PostgreSQL / AWS RDS)")]
+
+  AUTH0(["Auth0\n— external —"])
+  SAP(["SAP ECC\n— external —"])
+
+  ADAPTER["SAP Inventory Adapter\n(Java / Spring Boot\nscheduled import job)"]
+  KAFKA{{"Order Event Bus\n(Apache Kafka / AWS MSK)"}}
+
+  %% ── Synchronous hot-path dependencies (solid arrows) ─────────────────────
+  POS   -->|"GraphQL / HTTPS\ncart lookup"| GW
+  GW    -->|"JSON / HTTPS\nQR token resolve"| ID
+  GW    -->|"JSON / HTTPS\ncart read"| CART
+  GW    -->|"Redis protocol / TCP\nMGET inventory snapshots"| CACHE
+
+  ID    -->|"SQL / TCP\ncustomer profile read"| PROFDB
+  ID    -->|"OAuth 2.0 / OIDC\nJWT validation"| AUTH0
+
+  CART  -->|"SQL / TCP\ncart line-item read"| ORDERDB
+
+  %% ── Inline fallback — sync, cache-miss path only (dashed) ─────────────────
+  GW    -.->|"RFC / BAPI +400ms\ncache miss only"| SAP
+
+  %% ── Async pipeline — keeps cache warm (dashed) ───────────────────────────
+  SAP     -.->|"RFC / BAPI pull\nevery 15–30 min"| ADAPTER
+  ADAPTER -.->|"Kafka publish\ninventory snapshot events"| KAFKA
+  KAFKA   -.->|"Kafka consumer\nwrites store-SKU state"| CACHE
+
+  %% ── Styling ──────────────────────────────────────────────────────────────
+  classDef hotpath   fill:#dbeafe,stroke:#2563eb,color:#1e3a5f
+  classDef db        fill:#d1fae5,stroke:#059669,color:#064e3b
+  classDef external  fill:#f3f4f6,stroke:#9ca3af,color:#374151
+  classDef async     fill:#fef9c3,stroke:#ca8a04,color:#78350f
+  classDef queue     fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+
+  class POS,GW,ID,CART,CACHE hotpath
+  class PROFDB,ORDERDB db
+  class AUTH0,SAP external
+  class ADAPTER async
+  class KAFKA queue
+
+  %% ── Key ──────────────────────────────────────────────────────────────────
+  %% Solid arrow  = synchronous dependency on the hot path
+  %% Dashed arrow = either inline fallback (cache miss) or async pipeline (Kafka)
+  %% POS Client has NO direct sync dependency on SAP ECC.
+  %% SAP ECC appears only via the async warm-up pipeline and the gateway fallback.

@@ -1,0 +1,49 @@
+---
+case: Meridian Retail Group
+kata: 4.W.6
+date: 2026-06-26
+sources: 02-containers.mmd · 04-adr-001.md · 04-adr-002.md · 04-adr-003.md · 00-discovery-context.md
+note: All five NFR families present (Latency · Reliability · Quality · Cost · Security & Compliance). Each target carries a unit. Each test approach names what fails when the budget is breached.
+---
+
+# 06 — NFR Budget: Meridian Phase 1
+
+A budget table engineers can act on: specific targets, owning containers from `02-containers.mmd`, test approach that runs in the delivery pipeline (not "we'll measure in production"), and the silent anti-pattern that would violate each budget without triggering an explicit error.
+
+---
+
+| # | NFR | Family | Container(s) | Target | Test approach | Meridian justification | Silent violation anti-pattern |
+|---|-----|--------|-------------|--------|---------------|------------------------|-------------------------------|
+| 1 | Cart-to-checkout p95 latency | Latency | Web App + Mobile App → Apollo GraphQL Gateway → Cart Service → Checkout Service | p95 ≤ 1500ms end-to-end (including PSD2 SCA 3DS redirect round-trip) measured at the Apollo Gateway entry point, EU regions | Synthetic checkout transaction from DE/IT/FR probes running nightly; PR merge to release branch blocked if p95 exceeds 1400ms (100ms safety margin) | PSD2 SCA adds a 3DS redirect round-trip (~300–800ms) on top of the base checkout flow; without a measured budget the SCA latency absorbs the entire UX tolerance before the cart even loads | Checkout Service making a synchronous call to OMS before publishing to Kafka — OMS latency (~20–40ms baseline, ~500ms under load) is added to the checkout p95 and is invisible to the Stripe webhook timeout |
+| 2 | Peak request throughput | Reliability | Apollo GraphQL Gateway + Cart Service + Checkout Service | Sustained: 8 000 RPS across all EU regions combined. Burst: 12 000 RPS for 10 minutes without p99 latency degrading above 3 000ms | Load test runs automatically on every PR merge to the release branch; if either target is breached, the deploy is blocked and on-call is paged. Load test must include a cold-start scenario (EKS Gateway pods scaled to minimum count) to verify the Gateway reaches steady state within 90s of peak traffic onset. Pre-warm deployment hook required before scheduled flash sales. | Black Friday 2024: Meridian's EU platform was down 40 minutes. The brief attributes the outage to synchronous coupling under peak load. 8 000 RPS is the estimated peak based on 35% online revenue mix at the €2–4B revenue scale; 12 000 RPS covers 50% flash-sale spikes | No bulkhead between payment method pools in Checkout Service — a slow Postepay (IT) response exhausts the shared thread pool, cascading to all EU payment methods including DE Giropay and card checkout |
+| 3 | Click-and-collect phantom-stock cancellation rate | Quality | Inventory Read Cache (Redis) → Confidence API → ML Scoring Engine | < 2% of High-confidence C&C reservations result in cancellation-at-pickup (from the current 7% baseline; M1 target is ≤ 4% in 90 days, 2% is the 12-month sustained target) | Daily OMS reconciliation: join `confidence_event_log` (label=HIGH, reservation confirmed) with `oms_cancellations` (reason=item_unavailable_at_pickup); alert if 7-day rolling rate exceeds 2.5%. SAP Inventory Adapter must emit `last_successful_import_ts` to CloudWatch after every successful import; alert fires if metric is absent or staleness exceeds 60 minutes (2× import interval) — import failure must surface before the ADR-001 4-hour circuit-breaker threshold. | "12% phantom stock on click-and-collect = €8M/year in cancelled pickups" — the Confidence API's circuit breaker threshold (75% High-correctness rolling 24h) must be calibrated against this budget, not set arbitrarily | Hydrating the Inventory Read Cache lazily on first confidence request (cache miss triggers SAP call) — guarantees stale or absent cache entries at flash-sale onset, when High-confidence signals are most likely to be wrong |
+| 4 | Platform availability per region | Reliability | Apollo GraphQL Gateway + Checkout Service + Auth0 (external SLA) + Stripe (external SLA) | 99.95% per region per calendar month (≈ 22 minutes allowable downtime). Auth0 SLA (99.99%) and Stripe SLA (99.99%) are contractual backstops; Meridian's own containers must not reduce combined availability below 99.95% | Uptime monitor (synthetic probe every 60s per region) + SLO dashboard; alert fires at 99.92% (5-minute budget burn alert); incident declared at 99.90% | "No acceptable downtime window — stores must keep selling" (600 stores, continuous trading hours across 8 EU time zones). 99.95% is defensible and budgetable; 99.999% is aspirational and would require active-active multi-region deployments the Phase 1 budget cannot support | Apollo GraphQL Gateway without a per-downstream circuit breaker on Stripe's API — Stripe latency spikes accumulate as open connections in the gateway, exhausting the connection pool and taking down browse and cart operations (which have no Stripe dependency) alongside checkout |
+| 5 | Cost per completed checkout transaction | Cost | All Phase 1 hot-path containers (Apollo Gateway + Cart + Checkout + Identity + Confidence API + ML Scoring Engine) + Stripe processing fees excluded | < €0.04 per completed checkout, excluding Stripe transaction fees. Includes: AWS EKS compute, Redis, RDS, MSK (Kafka), CloudWatch, data transfer | Daily cost-allocation report from AWS Cost and Usage Report (CUR), broken down by container via tag `meridian:service`; alert if 7-day rolling average exceeds €0.035 per checkout | "$42M over 18 months" programme budget; 35% online revenue mix at €2–4B scale implies ~5–10M checkouts/year at peak; unit economics matter — a €0.10 per checkout cost at 10M checkouts is €1M/year in AWS alone before Stripe fees | Calling the ML Scoring Engine synchronously for every product page load regardless of channel (not only click-and-collect stores with active Confidence API requests) — unnecessary inference at full-catalogue scale generates ML compute costs that dwarf the per-checkout budget |
+| 6 | Identity authentication latency | Latency | Identity Service + Auth0 (external) + Apollo GraphQL Gateway | p95 ≤ 250ms for JWT validation + session enrichment (loyalty tier + consent flags) measured from the Apollo Gateway's perspective, all regions | Synthetic auth-flow probe every 60s per region (simulate associate terminal boot + customer login); alert if p95 exceeds 200ms; deploy blocked if p95 exceeds 250ms on load test | "Customer creates an account on web, can't use it in-store" — Identity Service is on the hot path for every POS cart lookup (03-flow-instore-cart.mmd) and every storefront page requiring session; at 30ms per auth check × 8 000 RPS the Identity Service is a gateway bottleneck if it calls Auth0 on every request | Identity Service calling Auth0's JWKS endpoint on every incoming request to validate the JWT signature — instead of caching the JWKS public key with a 1h TTL locally. Cold JWT validation adds 50–100ms per request; at 8 000 RPS this saturates Auth0's rate limits and makes Auth0 an availability dependency on every single request, not only on login |
+| 7 | PSD2 SCA completion rate + PII boundary | Security & Compliance | Checkout Service + Stripe (external, PCI-DSS CDE) + Confidence Event Log (PostgreSQL) | (a) 100% of EU card transactions above €50 complete PSD2 3DS SCA challenge or frictionless flow — 0% silent skip. (b) 0 PII fields (card number, CVV, billing name, email) logged outside the Stripe-managed PCI trust boundary. Both are binary gates — not percentages | (a) CI conformance check: Checkout Service code must not contain a Stripe `confirm` call without `payment_method_options.card.request_three_d_secure` set. (b) Nightly log egress scan: grep Confidence Event Log, OMS logs, and CloudWatch for card-number patterns (Luhn-checkable) or email-in-JSON fields; pipeline fails if any match found | PSD2 SCA (EBA, Oct 2024): SCA exemption threshold reduced to €50; non-compliance → 5–15% transaction decline rate (Adyen estimate). PCI-DSS Level 1: Meridian must never store, process, or transmit raw card data — Stripe tokenisation is the entire CDE isolation strategy; a single PII field outside it triggers a Level 1 audit finding | Logging the full Stripe `PaymentIntent` response object into the application structured log (which ships to the shared ELK cluster) — `PaymentIntent.charges.data[0].billing_details` contains the cardholder name and last 4 digits; this is PII leaving the PCI trust boundary in plaintext, invisible until a nightly scan or an audit |
+
+---
+
+## NFR family coverage check
+
+| Family | Rows | All five present? |
+|--------|------|-------------------|
+| Latency | #1 (checkout p95), #6 (auth latency) | ✅ |
+| Reliability | #2 (peak RPS), #4 (availability) | ✅ |
+| Quality | #3 (phantom-stock rate) | ✅ |
+| Cost | #5 (cost per checkout) | ✅ |
+| Security & Compliance | #7 (SCA + PII boundary) | ✅ |
+
+---
+
+## Breach consequences (what actually happens)
+
+| NFR | What fires on breach |
+|-----|---------------------|
+| #1 Checkout latency | PR merge to release branch blocked; on-call paged if breach in production |
+| #2 Peak throughput | Deploy blocked; load test is a required merge gate |
+| #3 Phantom-stock rate | 7-day rolling alert; circuit breaker in Confidence API auto-opens below 75% High-correctness |
+| #4 Availability | SLO dashboard alert at 99.92%; incident declared at 99.90% |
+| #5 Cost per checkout | Daily cost alert; no auto-block — requires engineering review within 48h |
+| #6 Auth latency | Deploy blocked on load test breach; 60s synthetic probe alerts in production |
+| #7 SCA + PII | CI pipeline fails on code pattern match; nightly log scan pages security on-call |

@@ -1,0 +1,41 @@
+sequenceDiagram
+  autonumber
+  participant POS  as POS Client
+  participant GW   as Apollo Gateway
+  participant ID   as Identity Service
+  participant CART as Cart Service
+  participant CACHE as Inventory Cache (Redis)
+  participant SAP  as SAP ECC
+
+  Note over POS,SAP: Trigger — Store Associate scans customer loyalty QR code at the in-store POS terminal
+
+  POS->>GW:   POST /graphql — cartLookupByQR(qrToken, storeId) [+30ms p95 POS→AWS MPLS]
+  Note right of POS: Authorization: Bearer {associate-JWT}
+
+  GW->>ID:    GET /identity/qr/{token} [+5ms p95 intra-AZ]
+  Note over ID: PostgreSQL — resolve QR token → customer_id [+10ms p95]
+  ID-->>GW:   {customer_id, name, loyaltyTier, consentFlags} [+5ms p95]
+
+  GW->>CART:  GET /cart/active?customerId={id} [+5ms p95 intra-AZ]
+  Note over CART: PostgreSQL — load active cart line items [+15ms p95]
+  CART-->>GW: {cart_id, items:[{sku, qty, unitPrice}, …]} [+5ms p95]
+
+  GW->>CACHE: MGET inventory:{storeId}:{sku} × N line items [+3ms p95 Redis batch]
+
+  alt Happy path — all N SKUs found in Inventory Cache
+    CACHE-->>GW: [{sku, count, label, syncTs}, …] — all cache hits [+3ms p95]
+    GW-->>POS:  {customer, cart, items with availability: dataSource=CACHE} [+30ms p95 GW→POS]
+    Note over POS,CACHE: ✅ Happy path ≈ 111ms p95 — within 200ms in-store SLO
+
+  else Cache miss — SKU-X returns null in MGET response
+    CACHE-->>GW: […, null for SKU-X, …] [+3ms p95]
+
+    Note over GW,SAP: ⚠ Inline SAP ECC fallback — this step dominates latency
+    GW->>SAP:   InventoryRead RFC/BAPI (storeId=X, materialNumber=SKU-X) [+400ms p95]
+    SAP-->>GW:  {unrestricted_stock, reserved_qty, last_movement_ts} [included in RFC roundtrip]
+
+    GW-->>POS:  {customer, cart, SKU-X: availability.dataSource=SAP_FALLBACK} [+30ms p95]
+    Note over POS,SAP: ⚠ Cache-miss path ≈ 511ms p95 — within 700ms degraded SLO
+  end
+
+  Note over POS,SAP: Bottleneck — SAP ECC inline RFC ~400ms p95 dominates when Inventory Cache misses. Primary mitigation: keep cache warm via Kafka stock events from SAP Inventory Adapter (async, out of band). Secondary mitigation: degrade to availability=UNKNOWN on cache miss — skip SAP call entirely and show 'Check with floor staff'.

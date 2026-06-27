@@ -1,0 +1,100 @@
+C4Container
+  title Container Diagram — Meridian Omnichannel Platform, Phase 1
+
+  %% ── Personas ──────────────────────────────────────────────────────────────
+  Person(customer,   "Customer",       "Web and mobile shopper")
+  Person(associate,  "Store Associate","In-store pickup confirmation")
+
+  %% ── External systems (kept outside boundary — no deployment details here) ─
+  System_Ext(stripe,   "Stripe",                   "Payment processing — PCI-DSS CDE, 3DS 2.0")
+  System_Ext(sap,      "SAP S/4HANA",              "Inventory source of truth — batch RFC/BAPI")
+  System_Ext(auth0,    "Auth0",                     "OAuth 2.0 / OIDC identity provider")
+  System_Ext(sendgrid, "SendGrid",                  "Transactional email")
+  System_Ext(crms,     "Regional CRMs (DE/IT/FR)",  "Loyalty event source — HTTPS webhook push")
+  System_Ext(dhl,      "DHL / Regional Logistics",  "Shipment tracking — HTTPS webhook push")
+
+  %% ── Meridian boundary ─────────────────────────────────────────────────────
+  System_Boundary(meridian, "Meridian Omnichannel Platform") {
+
+    %% Front-end containers
+    Container(web,    "Web App",    "Next.js 14 / TypeScript",
+      "SSR storefront — product pages, cart, checkout, confidence badge")
+    Container(mobile, "Mobile App", "React Native",
+      "iOS + Android — same feature set as web; primary channel")
+
+    %% API layer — NOT a god-container; no business logic lives here
+    Container(gateway, "Apollo GraphQL Gateway", "Node.js / Apollo Server",
+      "Aggregates Product, Confidence, Cart and Checkout APIs for front-ends; routes only, owns no domain state")
+
+    %% Domain services — each owns its own store
+    Container(identity,  "Identity Service",  "Node.js / Express",
+      "Session lifecycle, consent state, loyalty profile; proxies Auth0; receives CRM webhook events")
+    Container(confidence, "Confidence API",    "Python / FastAPI",
+      "Scores store-SKU confidence (High / Medium / Low); reads only from Inventory Read Cache; fires event log async")
+    Container(mlEngine,  "ML Scoring Engine", "Python / scikit-learn",
+      "Velocity-adjusted collectability model; called synchronously by Confidence API within p95 ≤ 800 ms")
+    Container(cart,      "Cart Service",       "Node.js",
+      "Shopping cart state, promotion application, stock reservation hold")
+    Container(checkout,  "Checkout Service",   "Node.js",
+      "Orchestrates Stripe payment intent, 3DS SCA intercept, reservation creation, confirmation email dispatch")
+    Container(oms,       "OMS",                "Node.js / custom",
+      "Manages reservations, fulfilment state, cancellations; receives DHL tracking webhooks")
+
+    %% Inventory import — Option A (scheduled batch, no live SAP on hot path)
+    Container(sapAdapter, "SAP Inventory Adapter", "Java / Spring Boot",
+      "Scheduled import job every 15–30 min; pulls inventory counts from SAP S/4HANA and POS velocity from OMS; writes to Inventory Read Cache")
+
+    %% Async eventing — order domain only (not the inventory confidence path)
+    ContainerQueue(kafka, "Order Event Bus", "Apache Kafka / AWS MSK",
+      "Order placed, reservation confirmed, cancellation events; decouples Checkout from OMS")
+
+    %% Data stores
+    ContainerDb(inventoryCache, "Inventory Read Cache", "Redis / AWS ElastiCache",
+      "Pre-materialised store-SKU snapshot: count, POS velocity 4 h window, OMS sync timestamp; TTL 30 min")
+    ContainerDb(orderDb,        "Order Database",        "PostgreSQL / AWS RDS",
+      "Reservation and order records owned by OMS")
+    ContainerDb(confidenceLog,  "Confidence Event Log",  "PostgreSQL / AWS RDS",
+      "Confidence label + posterior at reservation time; written fire-and-forget by Confidence API")
+  }
+
+  %% ── Relationships: front-end → gateway ───────────────────────────────────
+  Rel(customer,  web,     "browses, reserves click-and-collect",  "HTTPS")
+  Rel(customer,  mobile,  "browses, reserves click-and-collect",  "HTTPS")
+  Rel(associate, oms,     "confirms pickup, queries reservation",  "JSON / HTTPS")
+
+  Rel(web,    gateway, "fetches product, confidence, cart, checkout data", "GraphQL / HTTPS")
+  Rel(mobile, gateway, "fetches product, confidence, cart, checkout data", "GraphQL / HTTPS")
+
+  %% ── Relationships: gateway → domain services ──────────────────────────────
+  Rel(gateway, identity,  "validates session token",             "JSON / HTTPS")
+  Rel(gateway, confidence,"requests store-SKU confidence score", "JSON / HTTPS")
+  Rel(gateway, cart,      "reads and writes cart state",         "JSON / HTTPS")
+  Rel(gateway, checkout,  "initiates checkout flow",             "JSON / HTTPS")
+
+  %% ── Confidence path (Option A — no live SAP on hot path) ─────────────────
+  Rel(confidence,  mlEngine,       "scores confidence model",                       "JSON / HTTPS")
+  Rel(confidence,  inventoryCache, "reads store-SKU inventory snapshot",            "Redis protocol / TCP")
+  Rel(confidence,  confidenceLog,  "writes confidence-at-reservation log entry",    "SQL / TCP (fire-and-forget)")
+
+  Rel(sapAdapter, sap,            "imports inventory count snapshots every 15–30 min", "RFC / BAPI")
+  Rel(sapAdapter, oms,            "reads POS velocity snapshots",                   "JSON / HTTPS")
+  Rel(sapAdapter, inventoryCache, "writes store-SKU confidence inputs",             "Redis protocol / TCP")
+
+  %% ── Checkout → payment + order ────────────────────────────────────────────
+  Rel(checkout, stripe,   "creates payment intent, triggers 3DS SCA",  "REST / HTTPS")
+  Rel(checkout, kafka,    "publishes order-placed event",               "Kafka / AMQP")
+  Rel(checkout, sendgrid, "sends reservation confirmation email",       "REST / HTTPS")
+
+  %% ── Inbound webhooks ──────────────────────────────────────────────────────
+  Rel(stripe, checkout, "sends async payment confirmation webhook",    "HTTPS POST")
+  Rel(dhl,    oms,      "sends shipment status tracking updates",      "HTTPS POST webhook")
+  Rel(crms,   identity, "pushes loyalty earn and redeem events",       "HTTPS POST webhook")
+
+  %% ── Order event consumption ───────────────────────────────────────────────
+  Rel(kafka, oms, "delivers order-placed and cancellation events", "Kafka / AMQP")
+
+  %% ── OMS persistence ───────────────────────────────────────────────────────
+  Rel(oms, orderDb, "persists reservation and fulfilment records", "SQL / TCP")
+
+  %% ── Identity → Auth0 ──────────────────────────────────────────────────────
+  Rel(identity, auth0, "authenticates user, validates and refreshes JWT", "OAuth 2.0 / OIDC")
