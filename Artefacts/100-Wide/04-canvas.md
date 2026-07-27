@@ -2,7 +2,7 @@
 case: Meridian
 use_case: UC1.1 (Revised) — Demand-Driven Inventory Allocation
 segment: EU Fashion Omnichannel (€2–4B, 8 countries, 600 stores)
-date: 2025-01-15
+date: 2026-06-18
 ---
 
 # Canvas: Demand-Driven Inventory Allocation

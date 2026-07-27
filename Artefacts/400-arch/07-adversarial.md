@@ -157,3 +157,4 @@ All patches applied to the named artefacts at the time this document was created
 | A3 — ML inference capacity at 10× | Circuit breaker opens and C&C reverts to binary on peak day — designed degradation; binary fallback does not block checkout | Asha Sundaram (Product — AI Availability) |
 | C1 — Compound SAP + Redis cold start | Empty cache + SAP down leaves stores unable to look up inventory — low probability; mitigated by AOF persistence and maintenance-window alignment | Tomás Reyes (Architecture) |
 | C3 — Circuit breaker unmonitored open state | Manual re-arm leaves checkout blocked until on-call response — mitigated by 5-minute NFR #4 SLO alert and Phase 1 incident runbook | Tomás Reyes (Architecture) |
+
