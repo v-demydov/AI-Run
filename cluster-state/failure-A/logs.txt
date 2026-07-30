@@ -1,0 +1,29 @@
+[2026-07-30 02:14:35] INFO  Starting cart-api v1.5.0 (AI summarise feature enabled)
+[2026-07-30 02:14:35] INFO  Connected to Postgres at postgres-host:5432
+[2026-07-30 02:14:35] INFO  Connected to Redis at redis-host:6379
+[2026-07-30 02:14:36] INFO  DIAL gateway connected — endpoint: https://dial.example.com/v1
+[2026-07-30 02:14:36] INFO  Listening on :8080
+[2026-07-30 02:14:40] INFO  GET /healthz 200 OK (2ms)
+[2026-07-30 02:14:50] INFO  GET /healthz 200 OK (1ms)
+[2026-07-30 02:15:01] INFO  POST /cart/1001/summarise 200 OK (812ms) tokens_in=1247 tokens_out=198
+[2026-07-30 02:15:03] INFO  POST /cart/1002/summarise 200 OK (791ms) tokens_in=1189 tokens_out=203
+[2026-07-30 02:15:05] INFO  POST /cart/1003/summarise 200 OK (834ms) tokens_in=1312 tokens_out=195
+[2026-07-30 02:15:07] INFO  POST /cart/1004/summarise 200 OK (802ms) tokens_in=1201 tokens_out=211
+[2026-07-30 02:15:20] INFO  POST /cart/1005/summarise 200 OK (823ms) tokens_in=1198 tokens_out=207
+[2026-07-30 02:15:38] INFO  POST /cart/1006/summarise 200 OK (841ms) tokens_in=1433 tokens_out=219
+[2026-07-30 02:16:12] INFO  POST /cart/1007/summarise 200 OK (817ms) tokens_in=1201 tokens_out=198
+[2026-07-30 02:17:44] INFO  POST /cart/1008/summarise 200 OK (809ms) tokens_in=1267 tokens_out=202
+[2026-07-30 02:18:55] INFO  POST /cart/1009/summarise 200 OK (831ms) tokens_in=1189 tokens_out=214
+[2026-07-30 02:20:01] INFO  POST /cart/1010/summarise 200 OK (844ms) tokens_in=1254 tokens_out=199
+[2026-07-30 02:22:11] INFO  POST /cart/1011/summarise 200 OK (819ms) tokens_in=1301 tokens_out=208
+[2026-07-30 02:25:34] INFO  POST /cart/1012/summarise 200 OK (828ms) tokens_in=1198 tokens_out=197
+[2026-07-30 02:28:49] INFO  POST /cart/1013/summarise 200 OK (837ms) tokens_in=1211 tokens_out=205
+[2026-07-30 02:31:02] INFO  POST /cart/1014/summarise 200 OK (812ms) tokens_in=1243 tokens_out=202
+[2026-07-30 02:33:15] INFO  POST /cart/1015/summarise 200 OK (826ms) tokens_in=1199 tokens_out=199
+[2026-07-30 02:34:01] INFO  POST /cart/1016/summarise 200 OK (841ms) tokens_in=1312 tokens_out=218
+[2026-07-30 02:34:22] INFO  POST /cart/1017/summarise 200 OK (837ms) tokens_in=1289 tokens_out=211
+[2026-07-30 02:34:39] INFO  POST /cart/1018/summarise 200 OK (849ms) tokens_in=1401 tokens_out=224
+[2026-07-30 02:34:45] INFO  POST /cart/1019/summarise 200 OK (853ms) tokens_in=1412 tokens_out=231
+[2026-07-30 02:34:48] INFO  POST /cart/1020/summarise 200 OK (861ms) tokens_in=1389 tokens_out=227
+[2026-07-30 02:34:50] INFO  POST /cart/1021/summarise 200 OK (878ms) tokens_in=1421 tokens_out=235
+# [process terminated — no further log entries; OOMKill does not write a final log line]

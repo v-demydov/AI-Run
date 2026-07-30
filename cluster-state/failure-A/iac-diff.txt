@@ -1,0 +1,47 @@
+diff --git a/k8s/deployment.yaml b/k8s/deployment.yaml
+--- a/k8s/deployment.yaml
++++ b/k8s/deployment.yaml
+@@ -1,6 +1,6 @@
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+   name: cart-api
+   labels:
+     app: cart-api
+@@ -20,10 +20,16 @@
+       containers:
+         - name: cart-api
+-          image: registry.example.com/cart-api:1.4.2
++          image: registry.example.com/cart-api:latest
+           ports:
+             - containerPort: 8080
+           env:
+             - name: DATABASE_URL
+-              valueFrom:
+-                secretKeyRef:
+-                  name: cart-api-secrets
+-                  key: DATABASE_URL
++              value: "postgres://user:password@postgres-host:5432/cartdb"
++            - name: DIAL_API_KEY
++              value: "sk-live-abc123secret"
+           resources:
+             requests:
+               memory: "256Mi"
+               cpu: "100m"
+-            limits:
+-              memory: "1Gi"
+-              cpu: "1000m"
+-          readinessProbe:
+-            httpGet:
+-              path: /healthz
+-              port: 8080
+-            initialDelaySeconds: 5
+-            periodSeconds: 10
+-            failureThreshold: 3
+-          livenessProbe:
+-            httpGet:
+-              path: /healthz
+-              port: 8080
+-            initialDelaySeconds: 15
+-            periodSeconds: 20
+-            failureThreshold: 3

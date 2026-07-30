@@ -1,0 +1,70 @@
+Name:         cart-api-7d9f8b-k2pqr
+Namespace:    default
+Priority:     0
+Node:         k8s-node-02/10.0.1.12
+Start Time:   Wed, 30 Jul 2026 02:14:33 +0000
+Labels:       app=cart-api
+              pod-template-hash=7d9f8b
+Annotations:  <none>
+Status:       Running
+IP:           10.244.1.23
+Controlled By: ReplicaSet/cart-api-7d9f8b
+
+Containers:
+  cart-api:
+    Container ID:   containerd://8a3f1c2d...
+    Image:          registry.example.com/cart-api:latest
+    Image ID:       registry.example.com/cart-api@sha256:abc123...
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       OOMKilled
+      Exit Code:    137
+      Started:      Wed, 30 Jul 2026 02:34:33 +0000
+      Finished:     Wed, 30 Jul 2026 02:34:51 +0000
+    Ready:          False
+    Restart Count:  4
+    Limits:
+      <none>
+    Requests:
+      cpu:        100m
+      memory:     256Mi
+    Liveness:   <none>
+    Readiness:  <none>
+    Environment:
+      DATABASE_URL:  postgres://user:password@postgres-host:5432/cartdb
+      DIAL_API_KEY:  sk-live-abc123secret
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access (ro)
+
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+
+Volumes:
+  kube-api-access:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+
+Events:
+  Type     Reason      Age    From               Message
+  ----     ------      ----   ----               -------
+  Normal   Scheduled   22m    default-scheduler  Successfully assigned default/cart-api-7d9f8b-k2pqr to k8s-node-02
+  Normal   Pulled      22m    kubelet            Successfully pulled image "registry.example.com/cart-api:latest"
+  Normal   Created     22m    kubelet            Created container cart-api
+  Normal   Started     22m    kubelet            Started container cart-api
+  Normal   Pulled      18m    kubelet            Successfully pulled image "registry.example.com/cart-api:latest"
+  Normal   Started     18m    kubelet            Started container cart-api
+  Normal   Pulled      12m    kubelet            Successfully pulled image "registry.example.com/cart-api:latest"
+  Normal   Started     12m    kubelet            Started container cart-api
+  Warning  OOMKilling  20m    kubelet            Memory cgroup out of memory: Kill process 12345 (python3) score 1914 or sacrifice child
+  Warning  BackOff     3m     kubelet            Back-off restarting failed container
