@@ -1,0 +1,24 @@
+# DO NOT DEPLOY — test fixture for check_k8s_secrets.py bypass-case test
+# Contains intentional plaintext secrets to verify the scanner catches them.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-api-bad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cart-api-bad
+  template:
+    metadata:
+      labels:
+        app: cart-api-bad
+    spec:
+      containers:
+        - name: cart-api
+          image: registry.example.com/cart-api:1.5.0
+          env:
+            - name: DIAL_API_KEY
+              value: "sk-live-abc123secret"
+            - name: DATABASE_URL
+              value: "postgres://user:password@postgres-host:5432/cartdb"
