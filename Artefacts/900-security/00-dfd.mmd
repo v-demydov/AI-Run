@@ -1,0 +1,41 @@
+flowchart TD
+    %% ── External entity ──────────────────────────────────────────
+    User(["👤 End User\n(browser / mobile)"])
+
+    %% ── Trust Boundary 1: Internet Perimeter ─────────────────────
+    subgraph TB1 ["· · · Trust Boundary 1: Internet Perimeter · · ·"]
+        LB["Load Balancer\n(TLS termination)"]
+    end
+
+    %% ── Trust Boundary 2: Application (our control) ──────────────
+    subgraph TB2 ["· · · Trust Boundary 2: Application — our control · · ·"]
+        API["cart-api\n(checkout + AI summarise\n~3 M calls/month)"]
+        Obs["Observability Stack\n(logs · metrics · traces)"]
+
+        %% ── Trust Boundary 3: Data Stores ────────────────────────
+        subgraph TB3 ["· · · Trust Boundary 3: Data Stores · · ·"]
+            PG[("Postgres\norders · carts · user PII")]
+            Redis[("Redis cache\ncart state · short TTL")]
+            Secrets[("K8s Secrets\nDB URL · DIAL API key")]
+        end
+    end
+
+    %% ── Trust Boundary 4: Third-Party API (leaves our control) ───
+    subgraph TB4 ["· · · Trust Boundary 4: Third-Party API — leaves our control · · ·"]
+        DIAL["EPAM DIAL Gateway\n(auth · rate-limit · model routing)"]
+        LLM["Language Model\n(hosted by provider)"]
+    end
+
+    %% ── Data flows ───────────────────────────────────────────────
+    User         -->|"HTTPS — request (untrusted, cart data)"| LB
+    LB           -->|"HTTP — authn'd, TLS terminated"| API
+    API          -->|"cache read/write (cart state)"| Redis
+    API          -->|"DB read/write (orders, user PII)"| PG
+    Secrets      -.->|"inject credentials at pod startup"| API
+    API          -->|"summarise request (cart contents — exits our boundary)"| DIAL
+    DIAL         -->|"model call (prompt + cart contents)"| LLM
+    LLM          -->|"generated summary"| DIAL
+    DIAL         -->|"summary response"| API
+    API          -->|"HTTP response"| LB
+    LB           -->|"HTTPS response (cart data + summary)"| User
+    API          -.->|"telemetry — logs may contain PII"| Obs
