@@ -32,7 +32,7 @@ inputs: 02-solution.md, 03-staffing.xlsx (Balanced variant)
 | **Attendees** | Meridian Programme Director · **Executive Sponsor (CSCO, mandatory Phase 2+)** · EPAM Engagement Lead · Prosci OCM Lead |
 | **Decision rights** | Scope changes (written amendment required) · phase-gate pass/fail · budget adjustments · escalations that breach manager authority · Prosci right-to-cure trigger |
 | **Standing agenda** | KPI dashboard (phantom stock rate, accept rate, adoption %) · risk register Δ · phase exit criteria status · blockers requiring executive unblock |
-| **Executive Sponsor** | Meridian Chief Supply Chain Officer — named individual with written authority to mandate planner participation, resolve regional GM resistance, and authorise change orders. Authority documented in the SOW. First hard deadline: written planner mandate before 2026-11-28 (Phase 2 start − 3 days). |
+| **Executive Sponsor** | Meridian Chief Supply Chain Officer — named individual with written authority to mandate planner participation, resolve regional GM resistance, and authorise change orders. Authority documented in the SOW. First hard deadline: written planner mandate before 2026-10-24 (Phase 2 start − 3 business days; Phase 2 begins 2026-10-28). |
 
 ### 2.2 Sprint Review / Demo — Biweekly
 
